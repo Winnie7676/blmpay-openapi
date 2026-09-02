@@ -1,12 +1,25 @@
 openapi: 3.1.0
 info:
   title: BLMPay REST API
-  version: 1.0.0
-  description: Official BLMPay merchant API for collections, payouts, payment links, invoices, webhooks and USDT.
+  version: 1.1.0
+  description: |
+    Official BLMPay merchant API for collections, payouts, payment links, invoices, webhooks and USDT.
+
+    Authentication uses a BLMPay API key in the Authorization Bearer header.
+    API keys may also be domain-bound. For a domain-bound server-to-server key,
+    send X-BLMPay-Origin with the same HTTPS integration URL/host saved in BLMPay.
+    Browser requests may be identified through Origin or Referer. Existing legacy
+    keys without a configured domain remain backward compatible.
 servers:
   - url: https://pay.blmtec.co.tz/api/v1
 security:
   - bearerAuth: []
+x-blmpay-domain-bound-api-keys:
+  header: X-BLMPay-Origin
+  requiredWhen: API key has an allowed domain configured and request has no usable Origin/Referer header
+  example: https://example.com
+  mismatchError: integration_domain_not_allowed
+  missingError: integration_origin_required
 tags:
   - name: Payments
   - name: Balance
@@ -21,6 +34,7 @@ paths:
       tags: [Payments]
       operationId: listPayments
       parameters:
+        - {$ref: '#/components/parameters/IntegrationOrigin'}
         - {$ref: '#/components/parameters/Limit'}
         - {$ref: '#/components/parameters/Offset'}
         - name: status
@@ -28,10 +42,12 @@ paths:
           schema: {type: string}
       responses:
         '200': {$ref: '#/components/responses/Success'}
+        '403': {$ref: '#/components/responses/DomainRestrictionError'}
     post:
       tags: [Payments]
       operationId: createPayment
       parameters:
+        - {$ref: '#/components/parameters/IntegrationOrigin'}
         - {$ref: '#/components/parameters/IdempotencyKeyOptional'}
       requestBody:
         required: true
@@ -41,30 +57,41 @@ paths:
       responses:
         '200': {$ref: '#/components/responses/Success'}
         '201': {$ref: '#/components/responses/Success'}
+        '403': {$ref: '#/components/responses/DomainRestrictionError'}
   /payments/{reference}:
     get:
       tags: [Payments]
       operationId: getPayment
       parameters:
+        - {$ref: '#/components/parameters/IntegrationOrigin'}
         - {$ref: '#/components/parameters/Reference'}
       responses:
         '200': {$ref: '#/components/responses/Success'}
+        '403': {$ref: '#/components/responses/DomainRestrictionError'}
         '404': {$ref: '#/components/responses/Error'}
   /balance:
     get:
       tags: [Balance]
       operationId: getBalance
+      parameters:
+        - {$ref: '#/components/parameters/IntegrationOrigin'}
       responses:
         '200': {$ref: '#/components/responses/Success'}
+        '403': {$ref: '#/components/responses/DomainRestrictionError'}
   /payment-links:
     get:
       tags: [Payment Links]
       operationId: listPaymentLinks
+      parameters:
+        - {$ref: '#/components/parameters/IntegrationOrigin'}
       responses:
         '200': {$ref: '#/components/responses/Success'}
+        '403': {$ref: '#/components/responses/DomainRestrictionError'}
     post:
       tags: [Payment Links]
       operationId: createPaymentLink
+      parameters:
+        - {$ref: '#/components/parameters/IntegrationOrigin'}
       requestBody:
         required: true
         content:
@@ -72,15 +99,21 @@ paths:
             schema: {$ref: '#/components/schemas/CreatePaymentLinkRequest'}
       responses:
         '201': {$ref: '#/components/responses/Success'}
+        '403': {$ref: '#/components/responses/DomainRestrictionError'}
   /invoices:
     get:
       tags: [Invoices]
       operationId: listInvoices
+      parameters:
+        - {$ref: '#/components/parameters/IntegrationOrigin'}
       responses:
         '200': {$ref: '#/components/responses/Success'}
+        '403': {$ref: '#/components/responses/DomainRestrictionError'}
     post:
       tags: [Invoices]
       operationId: createInvoice
+      parameters:
+        - {$ref: '#/components/parameters/IntegrationOrigin'}
       requestBody:
         required: true
         content:
@@ -88,11 +121,13 @@ paths:
             schema: {$ref: '#/components/schemas/CreateInvoiceRequest'}
       responses:
         '201': {$ref: '#/components/responses/Success'}
+        '403': {$ref: '#/components/responses/DomainRestrictionError'}
   /payouts:
     get:
       tags: [Payouts]
       operationId: listPayouts
       parameters:
+        - {$ref: '#/components/parameters/IntegrationOrigin'}
         - {$ref: '#/components/parameters/Limit'}
         - {$ref: '#/components/parameters/Offset'}
         - name: status
@@ -103,20 +138,24 @@ paths:
           schema: {type: string, enum: [all, api, dashboard], default: all}
       responses:
         '200': {$ref: '#/components/responses/Success'}
+        '403': {$ref: '#/components/responses/DomainRestrictionError'}
   /payouts/{reference}:
     get:
       tags: [Payouts]
       operationId: getPayout
       parameters:
+        - {$ref: '#/components/parameters/IntegrationOrigin'}
         - {$ref: '#/components/parameters/Reference'}
       responses:
         '200': {$ref: '#/components/responses/Success'}
+        '403': {$ref: '#/components/responses/DomainRestrictionError'}
         '404': {$ref: '#/components/responses/Error'}
   /payouts/fee:
     get:
       tags: [Payouts]
       operationId: getPayoutFee
       parameters:
+        - {$ref: '#/components/parameters/IntegrationOrigin'}
         - name: amount
           in: query
           required: true
@@ -126,16 +165,22 @@ paths:
           schema: {type: string, enum: [mobile, bank, selcompesa], default: mobile}
       responses:
         '200': {$ref: '#/components/responses/Success'}
+        '403': {$ref: '#/components/responses/DomainRestrictionError'}
   /payouts/banks:
     get:
       tags: [Payouts]
       operationId: listPayoutBanks
+      parameters:
+        - {$ref: '#/components/parameters/IntegrationOrigin'}
       responses:
         '200': {$ref: '#/components/responses/Success'}
+        '403': {$ref: '#/components/responses/DomainRestrictionError'}
   /payouts/name-lookup:
     post:
       tags: [Payouts]
       operationId: payoutNameLookup
+      parameters:
+        - {$ref: '#/components/parameters/IntegrationOrigin'}
       requestBody:
         required: true
         content:
@@ -143,11 +188,13 @@ paths:
             schema: {$ref: '#/components/schemas/PayoutLookupRequest'}
       responses:
         '200': {$ref: '#/components/responses/Success'}
+        '403': {$ref: '#/components/responses/DomainRestrictionError'}
   /payouts/send:
     post:
       tags: [Payouts]
       operationId: createPayout
       parameters:
+        - {$ref: '#/components/parameters/IntegrationOrigin'}
         - {$ref: '#/components/parameters/IdempotencyKeyRequired'}
       requestBody:
         required: true
@@ -157,15 +204,21 @@ paths:
       responses:
         '200': {$ref: '#/components/responses/Success'}
         '201': {$ref: '#/components/responses/Success'}
+        '403': {$ref: '#/components/responses/DomainRestrictionError'}
   /webhooks:
     get:
       tags: [Webhooks]
       operationId: listWebhooks
+      parameters:
+        - {$ref: '#/components/parameters/IntegrationOrigin'}
       responses:
         '200': {$ref: '#/components/responses/Success'}
+        '403': {$ref: '#/components/responses/DomainRestrictionError'}
     post:
       tags: [Webhooks]
       operationId: createWebhook
+      parameters:
+        - {$ref: '#/components/parameters/IntegrationOrigin'}
       requestBody:
         required: true
         content:
@@ -173,35 +226,45 @@ paths:
             schema: {$ref: '#/components/schemas/CreateWebhookRequest'}
       responses:
         '201': {$ref: '#/components/responses/Success'}
+        '403': {$ref: '#/components/responses/DomainRestrictionError'}
   /webhooks/{id}:
     delete:
       tags: [Webhooks]
       operationId: deleteWebhook
       parameters:
+        - {$ref: '#/components/parameters/IntegrationOrigin'}
         - name: id
           in: path
           required: true
           schema: {type: integer, minimum: 1}
       responses:
         '200': {$ref: '#/components/responses/Success'}
+        '403': {$ref: '#/components/responses/DomainRestrictionError'}
   /usdt/activate:
     post:
       tags: [USDT]
       operationId: activateUsdt
+      parameters:
+        - {$ref: '#/components/parameters/IntegrationOrigin'}
       responses:
         '200': {$ref: '#/components/responses/Success'}
         '201': {$ref: '#/components/responses/Success'}
+        '403': {$ref: '#/components/responses/DomainRestrictionError'}
   /usdt/address:
     get:
       tags: [USDT]
       operationId: getUsdtAddress
+      parameters:
+        - {$ref: '#/components/parameters/IntegrationOrigin'}
       responses:
         '200': {$ref: '#/components/responses/Success'}
+        '403': {$ref: '#/components/responses/DomainRestrictionError'}
   /usdt/transfers:
     get:
       tags: [USDT]
       operationId: listUsdtTransfers
       parameters:
+        - {$ref: '#/components/parameters/IntegrationOrigin'}
         - name: page
           in: query
           schema: {type: integer, minimum: 1, default: 1}
@@ -210,11 +273,13 @@ paths:
           schema: {type: integer, minimum: 1, maximum: 100, default: 20}
       responses:
         '200': {$ref: '#/components/responses/Success'}
+        '403': {$ref: '#/components/responses/DomainRestrictionError'}
   /usdt/withdrawals/quote:
     post:
       tags: [USDT]
       operationId: quoteUsdtWithdrawal
       parameters:
+        - {$ref: '#/components/parameters/IntegrationOrigin'}
         - {$ref: '#/components/parameters/IdempotencyKeyRequired'}
       requestBody:
         required: true
@@ -228,10 +293,13 @@ paths:
                 amount: {oneOf: [{type: string}, {type: number}]}
       responses:
         '201': {$ref: '#/components/responses/Success'}
+        '403': {$ref: '#/components/responses/DomainRestrictionError'}
   /usdt/withdrawals:
     post:
       tags: [USDT]
       operationId: confirmUsdtWithdrawal
+      parameters:
+        - {$ref: '#/components/parameters/IntegrationOrigin'}
       requestBody:
         required: true
         content:
@@ -243,6 +311,7 @@ paths:
                 quote_reference: {type: string}
       responses:
         '201': {$ref: '#/components/responses/Success'}
+        '403': {$ref: '#/components/responses/DomainRestrictionError'}
 components:
   securitySchemes:
     bearerAuth:
@@ -250,6 +319,16 @@ components:
       scheme: bearer
       bearerFormat: BLMPay API key
   parameters:
+    IntegrationOrigin:
+      name: X-BLMPay-Origin
+      in: header
+      required: false
+      description: Required for domain-bound server-to-server API keys when Origin/Referer is not available. Must identify the same HTTPS integration host saved on the API key. Legacy keys without an allowed domain do not require this header.
+      schema:
+        type: string
+        format: uri
+        pattern: '^https://'
+      example: https://example.com
     Reference:
       name: reference
       in: path
@@ -386,5 +465,19 @@ components:
               status: {type: string, example: error}
               code: {type: integer}
               error_code: {type: string}
+              message: {type: string}
+            additionalProperties: true
+    DomainRestrictionError:
+      description: API key domain restriction failed. The key may require X-BLMPay-Origin, or the supplied/request origin host does not match the allowed domain.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status: {type: string, example: error}
+              code: {type: integer, example: 403}
+              error_code:
+                type: string
+                enum: [integration_origin_required, integration_domain_not_allowed, integration_pending_review, integration_rejected]
               message: {type: string}
             additionalProperties: true
