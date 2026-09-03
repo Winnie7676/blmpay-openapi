@@ -27,9 +27,9 @@ Existing legacy API keys without a saved domain remain backward compatible.
 Never commit live API keys, webhook secrets or merchant credentials to source control. Do not embed privileged merchant API keys in public browser bundles, APKs or IPAs. Keep privileged credentials on a secured backend and use idempotency keys for payment/payout creation.
 
 SDKs:
-- PHP: https://github.com/Winnie7676/blmpay-sdk-php
-- Node.js: https://github.com/Winnie7676/blmpay-sdk-node
-- Dart/Flutter: https://github.com/Winnie7676/blmpay-sdk-flutter
-- MCP: https://github.com/Winnie7676/blmpay-mcp
+- PHP: https://github.com/blmsoft/blmpay-sdk-php
+- Node.js: https://github.com/blmsoft/blmpay-sdk-node
+- Dart/Flutter: https://github.com/blmsoft/blmpay-sdk-flutter
+- MCP: https://github.com/blmsoft/blmpay-mcp
 
 Powered by BLMSoft.
